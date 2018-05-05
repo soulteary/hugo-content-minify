@@ -53,7 +53,10 @@ module.exports = function(sourceDirPath) {
     if (content.indexOf('{{<crayonCode>}}') > -1) contentHasError.push(file);
 
     if (content.indexOf('<!-- more -->') > -1) contentHasMore.push(file);
+
+    // 统计标记错误的文章
     if (content.indexOf('<!-- More -->') > -1) contentHasErrMore.push(file);
+    if (content.indexOf('<!-- -->') > -1) contentHasErrMore.push(file);
   });
 
   contentHasMore.forEach((file) => {
@@ -72,7 +75,10 @@ module.exports = function(sourceDirPath) {
     writeFileSync('./error.json', '{}');
   }
 
-  console.log(`[摘要标记错误] ${contentHasErrMore.length}`);
+  if(contentHasErrMore.length){
+    console.log(`[摘要标记错误] ${contentHasErrMore.length}`);
+    console.log(contentHasErrMore);
+  }
   // content.match(/<div id="crayon-.*<\/div><\/div><\/td><\/tr><\/table><\/div><\/div>/gm);
 
   console.log(
