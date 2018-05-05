@@ -1,0 +1,23 @@
+{
+  "blackList": [
+    ".DS_Store",
+    ".git",
+    ".gitignore",
+    "README.json",
+    "README.md"
+
+  ],
+  "timezone": "Asia/Shanghai",
+  "charset": "utf-8",
+  "debug": {
+    "enable": false,
+    "maxFilesCount": 1
+  },
+  "jobs": [
+    {
+      "source": "../blog-2017/public",
+      "hl": true,
+      "dist": "./cache"
+    }
+  ]
+}

@@ -2,61 +2,81 @@
 
 'use strict';
 
-const scandir = require('scandirectory');
-
 const fs = require('fs');
-const {readFileSync, writeFileSync, existsSync, mkdirSync} = require('fs');
+const {readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, statSync} = require('fs');
+const {join} = require('path');
+
+const {blackList} = require('./config.json');
 
 const path = require('path');
 
-// todo enable useCodeHighlight feature
-module.exports = function (sourceDirPath) {
-    console.log(sourceDirPath)
+function getAllFiles(dirPath, ext) {
 
-    const sourceDir = path.relative('.', sourceDirPath);
-
-    function completionCallback(err, list, data) {
-        if (err) {
-            return console.error(err);
+  function scandir(dirPath, ext) {
+    const result = readdirSync(dirPath);
+    if (!result.length) return [];
+    return result.filter(name => !(blackList || []).includes(name)).map((dirName) => {
+      const filePath = join(dirPath, dirName);
+      if (statSync(filePath).isDirectory()) {
+        return scandir(join(dirPath, dirName), ext);
+      } else {
+        if (!ext) return filePath;
+        if (filePath.lastIndexOf(ext) === filePath.indexOf(ext) && filePath.indexOf(ext) > -1) {
+          return filePath;
         }
+        return '';
+      }
+    });
+  }
 
-        let processFiles = [];
-        Object.keys(list).forEach(function (label) {
-            if ('file' === list[label] && (label.endsWith('.html') || label.endsWith('.xml'))) {
-                processFiles.push(`${sourceDirPath}/${label}`);
-            }
-        });
+  function flatten(arr) {
+    return arr.reduce(function(flat, toFlatten) {
+      return flat.concat(Array.isArray(toFlatten) ? flatten(toFlatten) : toFlatten);
+    }, []);
+  }
 
+  return flatten(scandir(dirPath, ext)).filter(file => file);
+}
 
-        console.log(processFiles.slice(0, 1))
+module.exports = function(sourceDirPath) {
+  console.log(`开始处理: ${sourceDirPath}`);
 
+  const sourceDir = path.relative('.', sourceDirPath);
 
-        var a = ['sitemap.xml'];
+  const allMarkdownFiles = getAllFiles(sourceDir, '.md');
+  let contentHasError = [];
+  let contentHasMore = [];
+  let contentHasErrMore = [];
 
-        var d = ['report.html'];
+  allMarkdownFiles.forEach((file) => {
+    const content = readFileSync(file, 'utf-8');
+    if (content.indexOf('{{<crayonCode>}}') > -1) contentHasError.push(file);
 
-        processFiles
-            .slice(0, 15)
-            .forEach(function (file) {
-                const content = (fs.readFileSync(file)).toString();
-                // fs.writeFileSync(source, content.replace(/\s+/,''));
+    if (content.indexOf('<!-- more -->') > -1) contentHasMore.push(file);
+    if (content.indexOf('<!-- More -->') > -1) contentHasErrMore.push(file);
+  });
 
-                console.log(file);
-                console.log(
-                    content
-                        .match(/<div id="crayon-.*<\/div><\/div><\/td><\/tr><\/table><\/div><\/div>/gm)
+  contentHasMore.forEach((file) => {
+    const contentTrimmed = readFileSync(file, 'utf-8').replace(/<!-- more -->\n/g, '');
+    writeFileSync(file, contentTrimmed);
+  });
 
-                        // .replace(/>\s+</g, '><')
-                        // .replace(/>(\s+\n|\r)/g, '>')
-                )
-            });
+  if (contentHasError.length) {
+    console.log(`[高亮存在错误] ${contentHasError.length}`);
+    writeFileSync('./error.json', JSON.stringify(contentHasError.reduce((prev, item) => {
+      const cachePath = join('./cache', item.replace(/\.\.\//g, '')).replace(/^\//g, '');
+      prev[cachePath] = true;
+      return prev;
+    }, {})));
+  } else {
+    writeFileSync('./error.json', '{}');
+  }
 
-        // $html = preg_replace( array( '/>\s+</Um', '/>(\s+\n|\r)/' ), array( '><', '>' ), $html );
+  console.log(`[摘要标记错误] ${contentHasErrMore.length}`);
+  // content.match(/<div id="crayon-.*<\/div><\/div><\/td><\/tr><\/table><\/div><\/div>/gm);
 
-    }
+  console.log(
+      // getAllFiles(sourceDir, '.html'),
+  );
 
-    scandir(sourceDir, {
-        ignoreHiddenFiles: true,
-        ignoreCustomPatterns: /\.(js|css|jpg|png|bmp|jpeg)$/
-    }, completionCallback)
 };
