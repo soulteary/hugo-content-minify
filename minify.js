@@ -83,8 +83,18 @@ module.exports = function(sourceDirPath) {
   const allHtmlFiles = getAllFiles(sourceDir, '.html');
   const trimTags = (s) => s.replace(/>\s+</gm, '><').replace(/>(\s+\n|\r)/g, '>');
   allHtmlFiles.forEach((file) => {
-    const content = readFileSync(file, 'utf-8');
-    writeFileSync(file, trimTags(content));
+    let content = readFileSync(file, 'utf-8').replace(/^\s+/, '');
+    const codeSnappets = content.match(/<div\s+id="crayon-[\s\S]+?\<\/td\><\/tr><\/table><\/div><\/div>/g);
+    if (codeSnappets) {
+      for (let i = 0, j = codeSnappets.length; i < j; i++) {
+        content = content.replace(codeSnappets[i], `<codeSnappet${i}/>`);
+      }
+      content = trimTags(content);
+      for (let i = 0, j = codeSnappets.length; i < j; i++) {
+        content = content.replace(`<codeSnappet${i}/>`, codeSnappets[i]);
+      }
+      writeFileSync(file, content);
+    }
   });
 
 };
