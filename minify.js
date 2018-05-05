@@ -2,8 +2,7 @@
 
 'use strict';
 
-const fs = require('fs');
-const {readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, statSync} = require('fs');
+const {readFileSync, writeFileSync, readdirSync, statSync} = require('fs');
 const {join} = require('path');
 
 const {blackList} = require('./config.json');
@@ -59,6 +58,7 @@ module.exports = function(sourceDirPath) {
     if (content.indexOf('<!-- -->') > -1) contentHasErrMore.push(file);
   });
 
+  // trim expect tag
   contentHasMore.forEach((file) => {
     const contentTrimmed = readFileSync(file, 'utf-8').replace(/<!-- more -->\n/g, '');
     writeFileSync(file, contentTrimmed);
@@ -75,14 +75,16 @@ module.exports = function(sourceDirPath) {
     writeFileSync('./error.json', '{}');
   }
 
-  if(contentHasErrMore.length){
+  if (contentHasErrMore.length) {
     console.log(`[摘要标记错误] ${contentHasErrMore.length}`);
     console.log(contentHasErrMore);
   }
-  // content.match(/<div id="crayon-.*<\/div><\/div><\/td><\/tr><\/table><\/div><\/div>/gm);
 
-  console.log(
-      // getAllFiles(sourceDir, '.html'),
-  );
+  const allHtmlFiles = getAllFiles(sourceDir, '.html');
+  const trimTags = (s) => s.replace(/>\s+</gm, '><').replace(/>(\s+\n|\r)/g, '>');
+  allHtmlFiles.forEach((file) => {
+    const content = readFileSync(file, 'utf-8');
+    writeFileSync(file, trimTags(content));
+  });
 
 };
