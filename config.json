@@ -5,7 +5,6 @@
     ".gitignore",
     "README.json",
     "README.md"
-
   ],
   "timezone": "Asia/Shanghai",
   "charset": "utf-8",
@@ -13,6 +12,7 @@
     "enable": false,
     "maxFilesCount": 1
   },
+  "errorReport": "./error.json",
   "jobs": [
     {
       "source": "../blog-2017/public",
