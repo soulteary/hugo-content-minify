@@ -15,7 +15,7 @@
   "errorReport": "./error.json",
   "jobs": [
     {
-      "source": "../blog-2017/public",
+      "source": "../blog/public",
       "hl": true,
       "dist": "./cache"
     }
