@@ -77,6 +77,7 @@ module.exports = function(sourceDirPath) {
       prev[cachePath] = true;
       return prev;
     }, {})));
+    process.exit(1);
   } else {
     writeFileSync(errorReport, '{}');
   }
